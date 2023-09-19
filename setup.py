@@ -17,7 +17,7 @@ with open(
 
 dependencies = [
     'yhttp >= 3.9.0, < 4',
-    'sqlalchemy',
+    'sqlalchemy >= 2',
     'psycopg2',
 ]
 

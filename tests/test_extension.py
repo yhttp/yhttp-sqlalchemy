@@ -1,21 +1,35 @@
 import pytest
 from bddrest import status, response, when
 from yhttp import json, statuses
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import select, String
 
+from yhttp.ext.sqlalchemy import install
 
 
 def test_extension(app, Given, freshdb):
+    app.settings.merge(f'''
+      db:
+        url: {freshdb}
+    ''')
 
-    class Foo(app.db.Base):
+    class Base(DeclarativeBase):
+        pass
+
+    class Foo(Base):
+        __tablename__ = 'foo'
+
         id: Mapped[int] = mapped_column(primary_key=True)
         title: Mapped[str] = mapped_column(String(30))
 
+    dbsession = install(app, Base, create_objects=True)
     app.ready()
 
-    @dbsession
     def mockup():
-        Foo(title='foo 1')
-        Foo(title='foo 2')
+        with app.db.sessionfactory() as session, session.begin():
+            foo = Foo(title='foo 1')
+            bar = Foo(title='foo 2')
+            session.add_all([foo, bar])
 
     mockup()
 
@@ -23,7 +37,8 @@ def test_extension(app, Given, freshdb):
     @json
     @dbsession
     def get(req):
-        return {f.id: f.title for f in Foo.select()}
+        result = req.session.scalars(select(Foo)).all()
+        return {f.id: f.title for f in result}
 
     @app.route()
     @json
@@ -39,9 +54,12 @@ def test_extension(app, Given, freshdb):
         Foo(title='qux')
         raise statuses.badrequest()
 
-    @dbsession
     def getfoo(title):
-        return Foo.get(title=title)
+        with app.db.sessionfactory() as session, session.begin():
+            result = session.scalars(
+                select(Foo).where(Foo.title == title)
+            ).first()
+            return result
 
     with Given():
         assert status == 200
@@ -55,17 +73,27 @@ def test_extension(app, Given, freshdb):
         when(verb='got')
         assert status == 201
 
-        foo = getfoo('foo')
+        foo = getfoo('foo 1')
         assert foo is not None
 
     app.shutdown()
 
 
-# def test_exceptions(app):
-#     dbsession = install(app)  # noqa: F841
-#
-#     if 'db' in app.settings:
-#         del app.settings['db']
-#
-#     with pytest.raises(ValueError):
-#         app.ready()
+def test_exceptions(app, freshdb):
+    class Base(DeclarativeBase):
+        pass
+
+    dbsession = install(app, Base)  # noqa: F841
+
+    if 'db' in app.settings:
+        del app.settings['db']
+
+    with pytest.raises(ValueError):
+        app.ready()
+
+    app.settings.merge(f'''
+      db:
+        url: {freshdb}
+    ''')
+
+    app.ready()
