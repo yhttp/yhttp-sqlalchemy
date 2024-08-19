@@ -13,19 +13,17 @@ class Manager:
         self.basemodel = basemodel
 
     def initialize(self):
-        if self.engine is not None:
-            raise ValueError('ORM already initialized')
+        if self.engine is None:
+            if 'db' not in self.app.settings:
+                raise ValueError(
+                    'Please provide db.url configuration entry, for example: '
+                    'postgresql://:@/dbname'
+                )
 
-        if 'db' not in self.app.settings:
-            raise ValueError(
-                'Please provide db.url configuration entry, for example: '
-                'postgresql://:@/dbname'
+            self.engine = create_engine(
+                self.app.settings.db.url,
+                isolation_level='REPEATABLE READ'
             )
-
-        self.engine = create_engine(
-            self.app.settings.db.url,
-            isolation_level='REPEATABLE READ'
-        )
 
         self.sessionfactory.configure(bind=self.engine)
 
