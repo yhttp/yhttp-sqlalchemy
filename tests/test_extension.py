@@ -29,7 +29,7 @@ def test_extension(app, Given, freshdb):
     app.db.create_objects()
 
     def mockup():
-        with app.db.begin() as session:
+        with app.db.session() as session:
             foo = Foo(title='foo 1')
             bar = Foo(title='foo 2')
             session.add_all([foo, bar])
@@ -38,27 +38,27 @@ def test_extension(app, Given, freshdb):
 
     @app.route()
     @json
-    @app.db.session
+    @app.db
     def get(req):
         result = req.dbsession.scalars(select(Foo)).all()
         return {f.id: f.title for f in result}
 
     @app.route()
     @json
-    @app.db.session
+    @app.db
     def got(req):
         Foo(title='foo')
         raise statuses.created()
 
     @app.route()
     @json
-    @app.db.session
+    @app.db
     def err(req):
         Foo(title='qux')
         raise statuses.badrequest()
 
     def getfoo(title):
-        with app.db.begin() as session:
+        with app.db.session() as session:
             result = session.scalars(
                 select(Foo).where(Foo.title == title)
             ).first()

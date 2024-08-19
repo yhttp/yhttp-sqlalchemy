@@ -7,11 +7,10 @@ class CreateObjectsCommand(SubCommand):
     __aliases__ = ['c']
 
     def __call__(self, args):
-        app = args.application
-        app.db.initialize()
-        app.db.create_objects()
-        self.report_objects(args)
-        app.db.deinitialize()
+        db = args.application.db
+        with db:
+            db.create_objects()
+            self.report_objects(args)
 
     def report_objects(self, args):
         app = args.application

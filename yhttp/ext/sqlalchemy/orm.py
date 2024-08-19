@@ -1,18 +1,18 @@
 import functools
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, close_all_sessions, Session
 from yhttp.core import HTTPStatus
 
 
-class Manager:
+class DatabaseManager:
     def __init__(self, app, basemodel):
         self.app = app
         self.engine = None
         self.sessionfactory = sessionmaker()
         self.basemodel = basemodel
 
-    def initialize(self):
+    def __enter__(self) -> sessionmaker:
         if self.engine is None:
             if 'db' not in self.app.settings:
                 raise ValueError(
@@ -26,21 +26,22 @@ class Manager:
             )
 
         self.sessionfactory.configure(bind=self.engine)
+        return self.sessionfactory
 
-    def deinitialize(self):
-        # TODO: dispose sessionfactory
+    def __exit__(self, exc_type, exc_value, traceback):
+        close_all_sessions()
         self.engine.dispose()
 
     def create_objects(self):
         return self.basemodel.metadata.create_all(self.engine)
 
-    def begin(self):
+    def session(self) -> Session:
         return self.sessionfactory.begin()
 
-    def session(self, handler):
+    def __call__(self, handler):
         @functools.wraps(handler)
         def outter(req, *a, **kw):
-            with self.begin() as session:
+            with self.session() as session:
                 req.dbsession = session
                 try:
                     return handler(req, *a, **kw)
@@ -49,5 +50,7 @@ class Manager:
                         return ex
 
                     raise
+                finally:
+                    del req.dbsession
 
         return outter
