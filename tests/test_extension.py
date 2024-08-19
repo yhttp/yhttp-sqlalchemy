@@ -5,7 +5,7 @@ from sqlalchemy import select, String
 
 from yhttp.core import json, statuses
 
-from yhttp.ext.sqlalchemy import install
+from yhttp.ext import sqlalchemy as saext, dbmanager
 
 
 def test_extension(app, Given, freshdb):
@@ -23,11 +23,13 @@ def test_extension(app, Given, freshdb):
         id: Mapped[int] = mapped_column(primary_key=True)
         title: Mapped[str] = mapped_column(String(30))
 
-    dbsession = install(app, Base, create_objects=True)
+    dbmanager.install(app)
+    saext.install(app, Base)
     app.ready()
+    app.db.create_objects()
 
     def mockup():
-        with app.db.sessionfactory() as session, session.begin():
+        with app.db.begin() as session:
             foo = Foo(title='foo 1')
             bar = Foo(title='foo 2')
             session.add_all([foo, bar])
@@ -36,27 +38,27 @@ def test_extension(app, Given, freshdb):
 
     @app.route()
     @json
-    @dbsession
+    @app.db.session
     def get(req):
-        result = req.session.scalars(select(Foo)).all()
+        result = req.dbsession.scalars(select(Foo)).all()
         return {f.id: f.title for f in result}
 
     @app.route()
     @json
-    @dbsession
+    @app.db.session
     def got(req):
         Foo(title='foo')
         raise statuses.created()
 
     @app.route()
     @json
-    @dbsession
+    @app.db.session
     def err(req):
         Foo(title='qux')
         raise statuses.badrequest()
 
     def getfoo(title):
-        with app.db.sessionfactory() as session, session.begin():
+        with app.db.begin() as session:
             result = session.scalars(
                 select(Foo).where(Foo.title == title)
             ).first()
@@ -84,7 +86,7 @@ def test_exceptions(app, freshdb):
     class Base(DeclarativeBase):
         pass
 
-    install(app, Base)
+    saext.install(app, Base)
 
     if 'db' in app.settings:
         del app.settings['db']

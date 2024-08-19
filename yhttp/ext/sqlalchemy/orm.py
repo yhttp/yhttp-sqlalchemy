@@ -1,5 +1,8 @@
+import functools
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from yhttp.core import HTTPStatus
 
 
 class Manager:
@@ -33,23 +36,17 @@ class Manager:
     def create_objects(self):
         return self.basemodel.metadata.create_all(self.engine)
 
+    def begin(self):
+        return self.sessionfactory.begin()
+
     def session(self, handler):
         @functools.wraps(handler)
         def outter(req, *a, **kw):
-            app = req.application
-            try:
-                req.dbsession = app.db.sessionfactory()
-            except AttributeError:
-                print(
-                    'Please install yhttp-sqlalchemy extention first.',
-                    file=sys.stderr
-                )
-                raise
-
-            with req.dbsession as session, session.begin():
+            with self.begin() as session:
+                req.dbsession = session
                 try:
-                    return func(req, *a, **kw)
-                except y.HTTPStatus as ex:
+                    return handler(req, *a, **kw)
+                except HTTPStatus as ex:
                     if ex.keepheaders:
                         return ex
 
