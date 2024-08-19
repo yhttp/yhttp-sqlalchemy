@@ -1,5 +1,5 @@
 [flake8]
-ignore = RST303,RST304,W503
+ignore = W503
 omit = 
 	dist
 per-file-ignores =

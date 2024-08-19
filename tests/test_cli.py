@@ -1,10 +1,14 @@
+import os
+
 from bddcli import Given, Application as CLIApplication, status, stderr, \
     when, stdout
 import easycli
-from yhttp import Application
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import String
-from yhttp.ext.sqlalchemy import install
+from yhttp.core import Application
+from yhttp.dev.fixtures import CICD
+
+from yhttp.ext import dbmanager, sqlalchemy as saext
 
 
 class Bar(easycli.SubCommand):
@@ -14,11 +18,11 @@ class Bar(easycli.SubCommand):
         print('bar')
 
 
-app = Application()
-app.settings.merge('''
-db:
-  url: postgresql://:@/foo
-''')
+class Baz(easycli.SubCommand):
+    __command__ = 'baz'
+
+    def __call__(self, args):
+        print('baz')
 
 
 class Base(DeclarativeBase):
@@ -32,13 +36,30 @@ class Foo(Base):
     title: Mapped[str] = mapped_column(String(30))
 
 
-install(app, Base, cliarguments=[Bar], create_objects=True)
+_host = os.environ.get('YHTTP_DB_DEFAULT_HOST', 'localhost' if CICD else '')
+_user = os.environ.get('YHTTP_DB_DEFAULT_USER', 'postgres' if CICD else '')
+_pass = os.environ.get('YHTTP_DB_DEFAULT_PASS', 'postgres' if CICD else '')
+
+
+app = Application()
+app.settings.merge(f'''
+db:
+  url: postgresql://{_user}:{_pass}@{_host}/foo
+''')
+dbmanager.install(app, cliarguments=[Bar])
+saext.install(app, Base, cliarguments=[Baz], create_objects=True)
 app.ready()
 
 
-def test_applicationcli():
+def test_applicationcli(cicd):
     cliapp = CLIApplication('example', 'tests.test_cli:app.climain')
-    with Given(cliapp, 'db'):
+    env = os.environ.copy()
+    if cicd:
+        env.setdefault('YHTTP_DB_DEFAULT_HOST', 'localhost')
+        env.setdefault('YHTTP_DB_DEFAULT_ADMINUSER', 'postgres')
+        env.setdefault('YHTTP_DB_DEFAULT_ADMINPASS', 'postgres')
+
+    with Given(cliapp, 'db', environ=env):
         assert stderr == ''
         assert status == 0
 

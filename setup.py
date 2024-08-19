@@ -1,6 +1,8 @@
-from setuptools import setup
 import os.path
 import re
+
+from setuptools import setup, find_namespace_packages
+
 
 # reading package's version (same way sqlalchemy does)
 with open(
@@ -16,9 +18,9 @@ with open(
 
 
 dependencies = [
-    'yhttp >= 3.9.0, < 4',
+    'yhttp >= 5, < 6',
+    'yhttp-dbmanager >= 4, < 5',
     'sqlalchemy >= 2',
-    'psycopg2',
 ]
 
 
@@ -31,9 +33,13 @@ setup(
     description='SQLAlchemy extension for yhttp.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',  # This is important!
-    install_requires=dependencies,
-    packages=['yhttp.ext.sqlalchemy'],
     license='MIT',
+    install_requires=dependencies,
+    packages=find_namespace_packages(
+        where='.',
+        include=['yhttp.ext.sqlalchemy'],
+        exclude=['tests'],
+    ),
     classifiers=[
         'Environment :: Console',
         'Environment :: Web Environment',

@@ -3,8 +3,8 @@ import functools
 import bddrest
 import pytest
 
-from yhttp import Application
-from yhttp.ext.sqlalchemy.fixtures import freshdb
+from yhttp.core import Application
+from yhttp.dev.fixtures import freshdb, cicd
 
 
 @pytest.fixture

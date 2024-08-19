@@ -1,8 +1,9 @@
 import pytest
 from bddrest import status, response, when
-from yhttp import json, statuses
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import select, String
+
+from yhttp.core import json, statuses
 
 from yhttp.ext.sqlalchemy import install
 
@@ -83,7 +84,7 @@ def test_exceptions(app, freshdb):
     class Base(DeclarativeBase):
         pass
 
-    dbsession = install(app, Base)  # noqa: F841
+    install(app, Base)
 
     if 'db' in app.settings:
         del app.settings['db']
