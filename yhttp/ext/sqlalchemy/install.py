@@ -1,35 +1,23 @@
-from .cli import DatabaseCLI
-from . import orm
-from .decorator import dbsession
+from yhttp.ext.dbmanager import DatabaseCommand
+
+from . import orm, cli
 
 
-def install(app, basemodel, db=None, cliarguments=None, create_objects=False):
-    app.cliarguments.append(DatabaseCLI)
+def install(app, basemodel, db=None, cliarguments=None):
+    DatabaseCommand.__arguments__.append(cli.DatabaseObjectsCommand)
     if cliarguments:
-        DatabaseCLI.__arguments__.extend(cliarguments)
+        cli.DatabaseObjectsCommand.__arguments__.extend(cliarguments)
 
-    if db is not None:
-        app.db = db
+    if db is None:
+        db = orm.Manager(app, basemodel)
 
-    @app.when
-    def ready(app):
-        if hasattr(app, 'db') and (app.db is not None):
-            return
+    if db.engine is None:
+        @app.when
+        def ready(app):
+            app.db.initialize()
 
-        if 'db' not in app.settings:
-            raise ValueError(
-                'Please provide db.url configuration entry, for example: '
-                'postgresql://:@/dbname'
-            )
+        @app.when
+        def shutdown(app):
+            app.db.deinitialize()
 
-        app.db = orm.initialize(
-            app.settings.db.url,
-            basemodel,
-            create_objects=create_objects
-        )
-
-    @app.when
-    def shutdown(app):
-        orm.deinitialize(app.db)
-
-    return dbsession
+    app.db = db

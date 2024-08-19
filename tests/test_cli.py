@@ -25,11 +25,11 @@ class Baz(easycli.SubCommand):
         print('baz')
 
 
-class Base(DeclarativeBase):
+class BaseModel(DeclarativeBase):
     pass
 
 
-class Foo(Base):
+class Foo(BaseModel):
     __tablename__ = 'foo'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -47,8 +47,7 @@ db:
   url: postgresql://{_user}:{_pass}@{_host}/foo
 ''')
 dbmanager.install(app, cliarguments=[Bar])
-saext.install(app, Base, cliarguments=[Baz], create_objects=True)
-app.ready()
+saext.install(app, BaseModel, cliarguments=[Baz])
 
 
 def test_applicationcli(cicd):
@@ -60,17 +59,8 @@ def test_applicationcli(cicd):
         env.setdefault('YHTTP_DB_DEFAULT_ADMINPASS', 'postgres')
 
     with Given(cliapp, 'db', environ=env):
-        assert stderr == ''
+        assert str(stderr) == ''
         assert status == 0
-
-        when('db drop')
-        when('db create')
-        assert stderr == ''
-        assert status == 0
-
-        when('db drop')
-        assert status == 0
-        assert stderr == ''
 
         # Custom Command line interface
         when('db bar')
@@ -78,9 +68,19 @@ def test_applicationcli(cicd):
         assert stderr == ''
         assert stdout == 'bar\n'
 
-        when('db c')
+        when('db objects baz')
         assert status == 0
         assert stderr == ''
+        assert stdout == 'baz\n'
+
+        when('db drop')
+        when('db create')
+        assert str(stderr) == ''
+        assert status == 0
+
+        when('db objects create')
+        assert str(stderr) == ''
+        assert status == 0
         assert stdout == '''Following objects has been created successfully:
 S foo_id_seq
 r foo
