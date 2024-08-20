@@ -1,6 +1,7 @@
 PKG_NAMESPACE = yhttp.ext.sqlalchemy
 PKG_NAME = yhttp-sqlalchemy
 PYDEPS_COMMON += \
+	'coveralls' \
 	'bddrest >= 4, < 5' \
 	'bddcli >= 2.5.1, < 3' \
 	'yhttp-dev >= 3.1.2'
