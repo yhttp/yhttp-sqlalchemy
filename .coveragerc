@@ -1,0 +1,12 @@
+[run]
+source = yhttp
+source_pkgs = yhttp.ext.sqlalchemy
+concurrency = multiprocessing
+parallel = true
+sigterm = true
+omit = 
+
+[report]
+exclude_lines=
+	raise NotImplementedError
+	pragma: no cover
