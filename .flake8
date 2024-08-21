@@ -4,4 +4,4 @@ omit =
 	dist
 per-file-ignores =
 	yhttp/ext/sqlalchemy/__init__.py: F401
-	tests/conftest.py: F401
+	tests/conftest.py: F401, F811

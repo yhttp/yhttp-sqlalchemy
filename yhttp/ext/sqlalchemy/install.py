@@ -9,15 +9,15 @@ def install(app, basemodel, db=None, cliarguments=None):
         cli.DatabaseObjectsCommand.__arguments__.extend(cliarguments)
 
     if db is None:
-        db = orm.DatabaseManager(app, basemodel)
+        db = orm.ApplicationORM(basemodel, app)
 
     if db.engine is None:
         @app.when
         def ready(app):
-            app.db.__enter__()
+            app.db.connect()
 
         @app.when
         def shutdown(app):
-            app.db.__exit__(None, None, None)
+            app.db.disconnect()
 
     app.db = db

@@ -8,8 +8,12 @@ from yhttp.dev.fixtures import freshdb, cicd
 
 
 @pytest.fixture
-def app():
+def app(freshdb):
     app = Application()
+    app.settings.merge(f'''
+      db:
+        url: {freshdb}
+    ''')
     yield app
     app.shutdown()
 

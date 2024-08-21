@@ -8,12 +8,7 @@ from yhttp.core import json, statuses
 from yhttp.ext import sqlalchemy as saext, dbmanager
 
 
-def test_extension(app, Given, freshdb):
-    app.settings.merge(f'''
-      db:
-        url: {freshdb}
-    ''')
-
+def test_extension(Given, freshdb, app):
     class Base(DeclarativeBase):
         pass
 
@@ -28,19 +23,24 @@ def test_extension(app, Given, freshdb):
     app.ready()
     app.db.create_objects()
 
-    def mockup():
-        with app.db.session() as session:
-            foo = Foo(title='foo 1')
-            bar = Foo(title='foo 2')
-            session.add_all([foo, bar])
+    with app.db.session() as session:
+        foo = Foo(title='foo 1')
+        session.add(foo)
+        session.commit()
+        session.reset()
 
-    mockup()
+    with app.db.copy(freshdb) as d, d.session() as session:
+        bar = Foo(title='foo 2')
+        session.add(bar)
+        session.commit()
+        session.reset()
 
     @app.route()
     @json
     @app.db
     def get(req):
-        result = req.dbsession.scalars(select(Foo)).all()
+        with app.db.session() as session:
+            result = session.scalars(select(Foo)).all()
         return {f.id: f.title for f in result}
 
     @app.route()
@@ -78,8 +78,6 @@ def test_extension(app, Given, freshdb):
 
         foo = getfoo('foo 1')
         assert foo is not None
-
-    app.shutdown()
 
 
 def test_exceptions(app, freshdb):
