@@ -11,7 +11,10 @@ class ORM:
         self.url = url
         self.engine = None
         self.basemodel = basemodel
-        self.session = scoped_session(sessionmaker())
+        self._session = scoped_session(sessionmaker())
+
+    def session(self):
+        return self._session()
 
     def copy(self, url=None):
         return ORM(self.basemodel, url=url or self.app.settings.db.url)
@@ -25,10 +28,12 @@ class ORM:
         assert u is not None
 
         self.engine = create_engine(u, isolation_level='REPEATABLE READ')
-        self.session.configure(bind=self.engine)
+        self._session.configure(bind=self.engine)
 
     def disconnect(self):
         close_all_sessions()
+        self._session.expunge_all()
+        self._session.remove()
         self.engine.dispose()
         self.engine = None
 
@@ -65,6 +70,6 @@ class ApplicationORM(ORM):
 
                 raise
             finally:
-                self.session.reset()
+                self._session.reset()
 
         return outter
