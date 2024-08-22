@@ -20,4 +20,8 @@ def install(app, basemodel, db=None, cliarguments=None):
         def shutdown(app):
             app.db.disconnect()
 
+        @app.when
+        def endresponse(response):
+            app.db.session.reset()
+
     app.db = db

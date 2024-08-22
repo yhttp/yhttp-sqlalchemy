@@ -1,9 +1,6 @@
-import functools
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, close_all_sessions, Session, \
     scoped_session
-from yhttp.core import HTTPStatus
 
 
 class ORM:
@@ -11,10 +8,7 @@ class ORM:
         self.url = url
         self.engine = None
         self.basemodel = basemodel
-        self._session = scoped_session(sessionmaker())
-
-    def session(self):
-        return self._session()
+        self.session = scoped_session(sessionmaker())
 
     def copy(self, url=None):
         return ORM(self.basemodel, url=url or self.app.settings.db.url)
@@ -28,12 +22,12 @@ class ORM:
         assert u is not None
 
         self.engine = create_engine(u, isolation_level='REPEATABLE READ')
-        self._session.configure(bind=self.engine)
+        self.session.configure(bind=self.engine)
 
     def disconnect(self):
         close_all_sessions()
-        self._session.expunge_all()
-        self._session.remove()
+        self.session.expunge_all()
+        self.session.remove()
         self.engine.dispose()
         self.engine = None
 
@@ -58,18 +52,3 @@ class ApplicationORM(ORM):
             )
 
         return super().connect(url=url or self.app.settings.db.url)
-
-    def __call__(self, handler):
-        @functools.wraps(handler)
-        def outter(*a, **kw):
-            try:
-                return handler(*a, **kw)
-            except HTTPStatus as ex:
-                if ex.keepheaders:
-                    return ex
-
-                raise
-            finally:
-                self._session.reset()
-
-        return outter

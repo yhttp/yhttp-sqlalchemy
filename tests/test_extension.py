@@ -37,7 +37,6 @@ def test_extension(Given, freshdb, app):
 
     @app.route()
     @json
-    @app.db
     def get(req):
         with app.db.session() as session:
             result = session.scalars(select(Foo)).all()
@@ -45,24 +44,21 @@ def test_extension(Given, freshdb, app):
 
     @app.route()
     @json
-    @app.db
     def got(req):
-        Foo(title='foo')
+        with app.db.session.begin():
+            app.db.session.add(Foo(title='foo'))
         raise statuses.created()
 
     @app.route()
     @json
-    @app.db
     def err(req):
-        Foo(title='qux')
+        with app.db.session() as session:
+            session.add(Foo(title='qux'))
         raise statuses.badrequest()
 
     def getfoo(title):
         with app.db.session() as session:
-            result = session.scalars(
-                select(Foo).where(Foo.title == title)
-            ).first()
-            return result
+            return session.query(Foo).filter_by(title=title).first()
 
     with Given():
         assert status == 200
