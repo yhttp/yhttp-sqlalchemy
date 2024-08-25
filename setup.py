@@ -18,7 +18,7 @@ with open(
 
 
 dependencies = [
-    'yhttp >= 5.0.2, < 6',
+    'yhttp >= 5.2, < 6',
     'yhttp-dbmanager >= 4, < 5',
     'sqlalchemy >= 2.0.32',
 ]
