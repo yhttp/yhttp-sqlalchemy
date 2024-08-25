@@ -7,8 +7,17 @@ from yhttp.core import guard as yguard
 
 
 class FieldMixin(metaclass=abc.ABCMeta):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, example=None, **kwargs):
+        self.example = example
         super().__init__(*args, **kwargs)
+
+    def __call__(self, *, example=None, **kwargs):
+        kwargs['example'] = self.example if example is None else example
+
+        if 'name' not in kwargs:
+            kwargs['name'] = self.name
+
+        return super(FieldMixin, self).__call__(**kwargs)
 
     @property
     @abc.abstractmethod

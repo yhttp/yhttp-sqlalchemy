@@ -50,8 +50,13 @@ def test_metadata(Given, freshdb, app):
         assert response.json == dict(id=2, title='foo', alias='OOF')
 
 
-def test_metadata_args():
-    col = m.String('foo', length=(0, 20)).column()
+def test_metadata_example():
+    field = m.String('foo', length=(0, 20), example='123')
+    assert field.example == '123'
+
+
+def test_metadata_column():
+    col = m.String('foo', length=(0, 20), example='123').column()
     assert isinstance(col, MappedColumn)
     assert isinstance(col.column.type, sa.String)
     assert col.column.type.length == 20
@@ -64,3 +69,21 @@ def test_metadata_args():
     col = m.Integer('foo').column()
     assert isinstance(col, MappedColumn)
     assert isinstance(col.column.type, sa.Integer)
+
+
+def test_metadata_override():
+    foo = m.String('foo', length=(0, 20), example='123')
+    bar = foo(name='bar')
+    assert bar.name == 'bar'
+    assert bar.length == (0, 20)
+    assert bar.example == '123'
+
+    bar = foo(name='bar', length=(1, 10))
+    assert bar.name == 'bar'
+    assert bar.length == (1, 10)
+    assert bar.example == '123'
+
+    bar = bar(example='321')
+    assert bar.name == 'bar'
+    assert bar.length == (1, 10)
+    assert bar.example == '321'
