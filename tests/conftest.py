@@ -9,7 +9,7 @@ from yhttp.dev.fixtures import freshdb, cicd
 
 @pytest.fixture
 def app(freshdb):
-    app = Application()
+    app = Application('0.1.0', 'foo')
     app.settings.merge(f'''
       db:
         url: {freshdb}

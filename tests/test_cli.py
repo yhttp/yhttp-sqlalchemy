@@ -41,7 +41,7 @@ _user = os.environ.get('YHTTP_DB_DEFAULT_USER', 'postgres' if CICD else '')
 _pass = os.environ.get('YHTTP_DB_DEFAULT_PASS', 'postgres' if CICD else '')
 
 
-app = Application()
+app = Application('0.1.0', 'foo')
 app.settings.merge(f'''
 db:
   url: postgresql://{_user}:{_pass}@{_host}/foo
