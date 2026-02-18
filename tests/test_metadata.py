@@ -11,6 +11,7 @@ from yhttp.ext.sqlalchemy import metadata as m
 def test_metadata(Given, freshdb, app):
     field_title = m.String('title', length=(1, 3))
     field_alias = m.String('alias', optional=True, default='OOF')
+    field_featured = m.Boolean('featured', default=False)
 
     class Base(DeclarativeBase):
         pass
@@ -21,6 +22,7 @@ def test_metadata(Given, freshdb, app):
         id = mapped_column(sa.Integer, primary_key=True)
         title = field_title.column(nullable=False)
         alias = field_alias.column()
+        featured = field_featured.column()
 
     dbmanager.install(app)
     saext.install(app, Base)
@@ -28,26 +30,30 @@ def test_metadata(Given, freshdb, app):
     app.db.create_objects()
 
     @app.route()
-    @app.bodyguard((field_title, field_alias), strict=True)
+    @app.bodyguard((field_title, field_alias, field_featured), strict=True)
     @json
     def post(req):
         session = app.db.session
         with session.begin():
-            f = Foo(title=req.form['title'], alias=req.form['alias'])
+            f = Foo(title=req.form['title'], alias=req.form['alias'],
+                    featured=req.form['featured'])
             session.add(f)
 
-        return dict(id=f.id, title=f.title, alias=f.alias)
+        return dict(id=f.id, title=f.title, alias=f.alias, featured=f.featured)
 
-    with Given(verb='post', form=dict(title='foo', alias='FOO')):
+    with Given(verb='post', form=dict(title='foo', alias='FOO',
+                                      featured=True)):
         assert status == 200
-        assert response.json == dict(id=1, title='foo', alias='FOO')
+        assert response.json == dict(id=1, title='foo', alias='FOO',
+                                     featured=True)
 
         when(form=given - 'title')
         assert status == '400 title: Required'
 
-        when(form=given - 'alias')
+        when(form=given - ['alias', 'featured'])
         assert status == 200
-        assert response.json == dict(id=2, title='foo', alias='OOF')
+        assert response.json == dict(id=2, title='foo', alias='OOF',
+                                     featured=False)
 
 
 def test_metadata_example():
@@ -69,6 +75,10 @@ def test_metadata_column():
     col = m.Integer('foo').column()
     assert isinstance(col, MappedColumn)
     assert isinstance(col.column.type, sa.Integer)
+
+    col = m.Boolean('foo').column()
+    assert isinstance(col, MappedColumn)
+    assert isinstance(col.column.type, sa.Boolean)
 
 
 def test_metadata_override():

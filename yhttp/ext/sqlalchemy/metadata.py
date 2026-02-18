@@ -49,3 +49,9 @@ class Integer(FieldMixin, yguard.Integer):
     @property
     def _satype(self):
         return sa.Integer
+
+
+class Boolean(FieldMixin, yguard.Boolean):
+    @property
+    def _satype(self):
+        return sa.Boolean
