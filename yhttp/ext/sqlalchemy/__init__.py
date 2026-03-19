@@ -1,4 +1,4 @@
 from .install import install
 
 
-__version__ = '4.2.0'
+__version__ = '4.2.1'
