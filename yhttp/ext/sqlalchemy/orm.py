@@ -4,11 +4,12 @@ from sqlalchemy.orm import sessionmaker, close_all_sessions, Session, \
 
 
 class ORM:
-    def __init__(self, basemodel, url=None):
+    def __init__(self, basemodel, url=None, saplugins=None):
         self.url = url
         self.engine = None
         self.basemodel = basemodel
         self.session = scoped_session(sessionmaker())
+        self.saplugins = saplugins
 
     def copy(self, url=None):
         return ORM(self.basemodel, url=url or self.app.settings.db.url)
@@ -21,7 +22,11 @@ class ORM:
         assert self.engine is None
         assert u is not None
 
-        self.engine = create_engine(u, isolation_level='REPEATABLE READ')
+        self.engine = create_engine(
+            u,
+            isolation_level='REPEATABLE READ',
+            plugins=self.saplugins or [],
+        )
         self.session.configure(bind=self.engine)
 
     def disconnect(self):
@@ -40,9 +45,9 @@ class ORM:
 
 
 class ApplicationORM(ORM):
-    def __init__(self, basemodel, app):
+    def __init__(self, basemodel, app, **kw):
         self.app = app
-        super().__init__(basemodel)
+        super().__init__(basemodel, **kw)
 
     def connect(self, url=None):
         if 'db' not in self.app.settings or 'url' not in self.app.settings.db:
