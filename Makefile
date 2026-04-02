@@ -2,14 +2,14 @@ PKG_NAMESPACE = yhttp.ext.sqlalchemy
 PKG_NAME = yhttp-sqlalchemy
 VENV_NAME = yhttp
 PYDEPS_COMMON += \
-	'coveralls' \
-	'bddrest >= 6.1, < 7' \
-	'bddcli >= 2.5.1, < 3' \
-	'yhttp-dev >= 3.2.4'
+	'coveralls >= 4.1.0' \
+	'bddrest >= 6.2.3, < 7' \
+	'bddcli >= 2.10.1, < 3' \
+	'yhttp-dev >= 4, < 5'
 
 
 # Assert the python-makelib version
-PYTHON_MAKELIB_VERSION_REQUIRED = 2.0.1
+PYTHON_MAKELIB_VERSION_REQUIRED = 2.5.2
 
 
 # Ensure the python-makelib is installed

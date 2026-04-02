@@ -6,7 +6,6 @@ import easycli
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import String
 from yhttp.core import Application
-from yhttp.dev.fixtures import CICD
 
 from yhttp.ext import dbmanager, sqlalchemy as saext
 
@@ -36,6 +35,7 @@ class Foo(BaseModel):
     title: Mapped[str] = mapped_column(String(30))
 
 
+CICD = os.environ.get('CI') and os.environ.get('GITHUB_RUN_ID')
 _host = os.environ.get('YHTTP_DB_DEFAULT_HOST', 'localhost' if CICD else '')
 _user = os.environ.get('YHTTP_DB_DEFAULT_USER', 'postgres' if CICD else '')
 _pass = os.environ.get('YHTTP_DB_DEFAULT_PASS', 'postgres' if CICD else '')
