@@ -48,7 +48,8 @@ def test_metadata(Given, freshdb, app):
                                      featured=True)
 
         when(form=given - 'title')
-        assert status == '400 title: Required'
+        assert status == '400 Bad Request'
+        assert response.text.startswith('400 title: Required\r\n')
 
         when(form=given - ['alias', 'featured'])
         assert status == 200
