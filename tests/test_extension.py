@@ -88,9 +88,9 @@ def test_exceptions(app, freshdb):
     with pytest.raises(ValueError):
         app.ready()
 
-    app.settings.merge(f'''
+    app.settings |= f'''
       db:
         url: {freshdb}
-    ''')
+    '''
 
     app.ready()

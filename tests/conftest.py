@@ -10,10 +10,10 @@ from yhttp.dev.fixtures import freshdb
 @pytest.fixture
 def app(freshdb):
     app = Application('0.1.0', 'foo')
-    app.settings.merge(f'''
+    app.settings |= f'''
       db:
         url: {freshdb}
-    ''')
+    '''
     yield app
     app.shutdown()
 

@@ -42,10 +42,10 @@ _pass = os.environ.get('YHTTP_DB_DEFAULT_PASS', 'postgres' if CICD else '')
 
 
 app = Application('0.1.0', 'foo')
-app.settings.merge(f'''
+app.settings |= f'''
 db:
   url: postgresql://{_user}:{_pass}@{_host}/foo
-''')
+'''
 dbmanager.install(app, cliarguments=[Bar])
 saext.install(app, BaseModel, cliarguments=[Baz])
 
