@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker, close_all_sessions, Session, \
     scoped_session
 
@@ -22,8 +23,14 @@ class ORM:
         assert self.engine is None
         assert u is not None
 
+        parsed = make_url(u)
+        if parsed.drivername in ('postgresql', 'postgres'):
+            # SQLAlchemy 2.1 loads psycopg 3 for a driverless URL.
+            # https://docs.sqlalchemy.org/en/21/changelog/migration_21.html#default-postgresql-driver-changed-to-psycopg-psycopg-3  # noqa: E501
+            parsed = parsed.set(drivername='postgresql+psycopg2')
+
         self.engine = create_engine(
-            u,
+            parsed,
             isolation_level='REPEATABLE READ',
             plugins=self.saplugins or [],
         )
